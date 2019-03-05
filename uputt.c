@@ -121,7 +121,7 @@ main(int argc, char *argv[])
 	if (res->ai_family == AF_INET)
 		ret = setsockopt(s, IPPROTO_IP, IP_RECVERR, &on, sizeof(on));
 	else
-		ret = setsockopt(s, IPPROTO_IP, IPV6_RECVERR, &on, sizeof(on));
+		ret = setsockopt(s, IPPROTO_IPV6, IPV6_RECVERR, &on, sizeof(on));
 	if (ret != 0)
 		err(1, "setsockopt IP_RECVERR");
 #endif
