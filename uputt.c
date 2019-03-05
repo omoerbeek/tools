@@ -42,7 +42,7 @@ usage(void)
 int
 main(int argc, char *argv[]) 
 {
-	int ch, ret, s, save_errno;
+	int ch, ret, s, save_errno, on = 1;
 	struct addrinfo h;
 	struct addrinfo *res, *res0;
 	char *cause, buf[1];
@@ -113,10 +113,19 @@ main(int argc, char *argv[])
 	if (s == -1)
 		err(1, "%s", cause);
 
-	freeaddrinfo(res);
 	ret = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &sec, sizeof(sec));
 	if (ret != 0)
 		err(1, "setsockopt SO_RCVTIMEO");
+
+#ifdef __linux__
+	if (res->ai_family == AF_INET)
+		ret = setsockopt(s, IPPROTO_IP, IP_RECVERR, &on, sizeof(on));
+	else
+		ret = setsockopt(s, IPPROTO_IPV6, IPV6_RECVERR, &on, sizeof(on));
+	if (ret != 0)
+		err(1, "setsockopt IP_RECVERR");
+#endif
+	freeaddrinfo(res);
 
 
 	buf[0] = 0xba;
