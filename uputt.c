@@ -34,7 +34,8 @@ int sixflag = 1;
 void
 usage(void)
 {
-	fprintf(stderr, "%s: usage [-46] [-p port] host\n", getprogname());
+	extern char *__progname;
+	fprintf(stderr, "%s: usage [-46] [-p port] host\n", __progname);
 	exit(1);
 }
 
@@ -45,7 +46,7 @@ main(int argc, char *argv[])
 	struct addrinfo h;
 	struct addrinfo *res, *res0;
 	char *cause, buf[1];
-	struct timeval sec = {1, 0};
+	struct timeval sec = {3, 0};
 
 	while ((ch = getopt(argc, argv, "46p:")) != -1) {
 		switch (ch) {
@@ -124,8 +125,18 @@ main(int argc, char *argv[])
 		err(1, "send");
 
 	ret = recvfrom(s, buf, 1, 0, NULL, NULL);
-	if (ret != 1)
-		err(1, "recv");
+	if (ret != 1) {
+		switch (errno) {
+		case EAGAIN:
+			fprintf(stderr, "Timeout happened\n");
+			exit(1);
+		case ECONNREFUSED:
+			fprintf(stderr, "Connection actively refused!\n");
+			exit(1);
+		default:
+			err(1, "recv");
+		}
+	}
 	exit(0);
 }
 
