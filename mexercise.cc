@@ -110,11 +110,13 @@ void exercise(size_t count) {
   for (size_t i = 0; i < count; i++) {
     allocs[i] = alloc<A>();
   }
+/*
   for (auto i = allocs.begin(); i != allocs.end(); ++i) {
     for (auto j = (*i)->begin(); j != (*i)->end(); ++j) {
       *j = 99;
     }
   }
+*/
   auto rng = std::default_random_engine {};
   std::shuffle(std::begin(allocs), std::end(allocs), rng);
 
@@ -124,23 +126,27 @@ void exercise(size_t count) {
   for (size_t i = 0; i < count/2; i++) {
     allocs[i] = alloc<A>();
   }
+/*
   for (auto i = allocs.begin(); i != allocs.end(); ++i) {
     for (auto j = (*i)->begin(); j != (*i)->end(); ++j) {
       *j = 99;
     }
   }
+*/
   for (size_t i = 0; i < count; i++) {
     delete allocs[i];
   }
 }
 
 void *f1(void *) {
-	exercise<mmap_allocator<char>>(1000);
+	for (int i = 0; i < 100; i++)
+		exercise<mmap_allocator<char>>(400);
 	return nullptr;
 }
 
 void *f2(void *) {
-	exercise<malloc_allocator<char>>(1000);
+	for (int i = 0; i < 100; i++)
+		exercise<malloc_allocator<char>>(400);
 	return nullptr;
 }
 
