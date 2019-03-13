@@ -4,6 +4,7 @@
 //#include <new>
 #include <sys/mman.h>
 #include <err.h>
+#include <pthread.h>
 
 #include <algorithm>
 #include <random>
@@ -67,7 +68,7 @@ struct malloc_allocator {
   pointer
   allocate (size_type const n) {
     void *p = malloc(n * sizeof(value_type));
-    if (p == NULL)
+    if (p == nullptr)
       throw std::bad_alloc();
     return static_cast<pointer>(p);
   }
@@ -117,8 +118,42 @@ void exercise(size_t count) {
   auto rng = std::default_random_engine {};
   std::shuffle(std::begin(allocs), std::end(allocs), rng);
 
+  for (size_t i = 0; i < count/2; i++) {
+    delete allocs[i];
+  }
+  for (size_t i = 0; i < count/2; i++) {
+    allocs[i] = alloc<A>();
+  }
+  for (auto i = allocs.begin(); i != allocs.end(); ++i) {
+    for (auto j = (*i)->begin(); j != (*i)->end(); ++j) {
+      *j = 99;
+    }
+  }
   for (size_t i = 0; i < count; i++) {
     delete allocs[i];
+  }
+}
+
+void *f1(void *) {
+	exercise<mmap_allocator<char>>(1000);
+	return nullptr;
+}
+
+void *f2(void *) {
+	exercise<malloc_allocator<char>>(1000);
+	return nullptr;
+}
+
+void start(size_t count, void *(*f)(void *)) {
+
+  pthread_t p[count];
+  for (int i = 0; i < count; i++) {
+    if (pthread_create(&p[i], nullptr, f, nullptr) != 0)
+      err(1, "pthread_create");
+  }
+  for (int i = 0; i < count; i++) {
+    if (pthread_join(p[i], nullptr) != 0)
+      err(1, "pthread_join");
   }
 }
 
@@ -132,11 +167,11 @@ main(int argc, char *argv[]) {
   switch (atoi(argv[1])) {
     case 1:
       std::cout << "Method 1: mmap_allocator" << std::endl;
-      exercise<mmap_allocator<char>>(10000);
+      start(10, f1);
       break;
     case 2:
       std::cout << "Method 2: malloc_allocator" << std::endl;
-      exercise<malloc_allocator<char>>(10000);
+      start(10, f2);
       break;
     default:
       errx(1, "usage: %s [1|2|...]\n", __progname);
